@@ -1,0 +1,17 @@
+# MCP Server
+mcp-server
+
+# Web Crawler
+crawl4ai
+
+# AWS and LangChain
+boto3
+langchain-aws
+langchain-core
+
+# Utilities
+python-dotenv
+requests
+
+# Server
+uvicorn
