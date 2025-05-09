@@ -5,9 +5,9 @@ A web crawler MCP server using crawl4ai that allows AI models to crawl websites 
 
 ## Features
 
-- **Simple URL Crawling**: Crawl a single URL and get content in markdown format
 - **Recursive Crawling**: Recursively crawl websites starting from a URL
 - **Configurable Depth**: Control how deep the crawler should go
+- **Page Limit**: Set maximum number of pages to crawl
 - **Timeout Configuration**: Set custom timeout for long crawling operations
 
 ## Installation
@@ -18,14 +18,14 @@ The fastest way to install and use the Crawl4AI MCP server is with uv:
 
 ```bash
 # Install directly from GitHub
-uv pip install git+https://github.com/yourusername/crawl4ai-mcp.git
+uv pip install git+https://github.com/Kavin-kumar10/crawl4ai-mcp.git
 
 # Or create a virtual environment first
 uv venv -p python3.10 .venv
 source .venv/bin/activate  # On Unix/macOS
 # or
 .venv\Scripts\activate  # On Windows
-uv pip install git+https://github.com/yourusername/crawl4ai-mcp.git
+uv pip install git+https://github.com/Kavin-kumar10/crawl4ai-mcp.git
 ```
 
 ### Using pipx
@@ -33,7 +33,7 @@ uv pip install git+https://github.com/yourusername/crawl4ai-mcp.git
 You can also install it with pipx for an isolated environment:
 
 ```bash
-pipx install git+https://github.com/yourusername/crawl4ai-mcp.git
+pipx install git+https://github.com/Kavin-kumar10/crawl4ai-mcp.git
 ```
 
 This will install the package in an isolated environment and make the `crawl4ai-mcp` command available globally.
@@ -43,7 +43,7 @@ This will install the package in an isolated environment and make the `crawl4ai-
 You can also install it with pip:
 
 ```bash
-pip install git+https://github.com/yourusername/crawl4ai-mcp.git
+pip install git+https://github.com/Kavin-kumar10/crawl4ai-mcp.git
 ```
 
 ### From Source
@@ -51,7 +51,7 @@ pip install git+https://github.com/yourusername/crawl4ai-mcp.git
 To install from source:
 
 ```bash
-git clone https://github.com/yourusername/crawl4ai-mcp.git
+git clone https://github.com/Kavin-kumar10/crawl4ai-mcp.git
 cd crawl4ai-mcp
 
 # Using uv (recommended)
@@ -93,35 +93,23 @@ The `mcp.json` file contains:
 
 ### Available Tools
 
-The MCP server provides the following tools:
+The MCP server provides the following tool:
 
-#### 1. crawl_simple
-
-Crawl a single URL and return the content in markdown format.
-
-**Parameters:**
-- `url` (string): The URL to crawl
-
-**Example:**
-```json
-{
-  "url": "https://example.com"
-}
-```
-
-#### 2. crawl_recursive
+#### crawl_recursive
 
 Recursively crawl a website starting from a URL.
 
 **Parameters:**
 - `url` (string): The URL to start crawling from
 - `max_depth` (integer, optional): Maximum depth for recursive crawling (default: 2)
+- `max_pages` (integer, optional): Maximum number of pages to crawl (default: 500)
 
 **Example:**
 ```json
 {
   "url": "https://example.com",
-  "max_depth": 3
+  "max_depth": 3,
+  "max_pages": 100
 }
 ```
 
@@ -132,25 +120,14 @@ Here's an example of how to use the MCP server with Claude after configuring it 
 ```
 I need to use the Crawl4AI MCP server to crawl a website.
 
-First, let me crawl a single page:
-<use_mcp_tool>
-<server_name>crawl4ai-mcp</server_name>
-<tool_name>crawl_simple</tool_name>
-<arguments>
-{
-  "url": "https://example.com"
-}
-</arguments>
-</use_mcp_tool>
-
-Now, let me recursively crawl the website:
 <use_mcp_tool>
 <server_name>crawl4ai-mcp</server_name>
 <tool_name>crawl_recursive</tool_name>
 <arguments>
 {
   "url": "https://example.com",
-  "max_depth": 2
+  "max_depth": 2,
+  "max_pages": 100
 }
 </arguments>
 </use_mcp_tool>
@@ -172,7 +149,7 @@ Set up your development environment:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/crawl4ai-mcp.git
+git clone https://github.com/Kavin-kumar10/crawl4ai-mcp.git
 cd crawl4ai-mcp
 
 # Create a virtual environment with uv

@@ -3,7 +3,6 @@ from mcp.server.fastmcp import FastMCP
 mcp = FastMCP("Crawl4AI")
 
 @mcp.tool()
-@mcp.tool()
 async def crawl_recursive(
     url: str,
     max_depth: int = 2,

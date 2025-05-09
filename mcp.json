@@ -1,0 +1,80 @@
+{
+  "servers": [
+    {
+      "name": "crawl4ai-mcp",
+      "description": "A web crawler MCP server using crawl4ai that allows AI models to crawl websites and extract content in markdown format",
+      "transport": {
+        "type": "stdio",
+        "command": "crawl4ai-mcp"
+      },
+      "tools": [
+        {
+          "name": "crawl_recursive",
+          "description": "Recursively crawl a website starting from a URL",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "description": "The URL to start crawling from"
+              },
+              "max_depth": {
+                "type": "integer",
+                "description": "Maximum depth for recursive crawling",
+                "default": 2
+              },
+              "max_pages": {
+                "type": "integer",
+                "description": "Maximum number of pages to crawl",
+                "default": 500
+              }
+            },
+            "required": ["url"]
+          },
+          "output_schema": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "description": "Status of the crawling operation (success or error)"
+              },
+              "crawled_urls_count": {
+                "type": "integer",
+                "description": "Number of URLs successfully crawled"
+              },
+              "main_content": {
+                "type": "string",
+                "description": "Markdown content of the main URL"
+              },
+              "data": {
+                "type": "array",
+                "description": "Array of crawled pages with their content",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "description": "URL of the crawled page"
+                    },
+                    "depth": {
+                      "type": "integer",
+                      "description": "Depth level of the crawled page"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Title of the crawled page"
+                    },
+                    "markdown": {
+                      "type": "string",
+                      "description": "Markdown content of the crawled page"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

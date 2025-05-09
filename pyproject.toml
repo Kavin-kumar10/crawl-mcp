@@ -30,8 +30,8 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/yourusername/crawl4ai-mcp"
-"Bug Tracker" = "https://github.com/yourusername/crawl4ai-mcp/issues"
+"Homepage" = "https://github.com/Kavin-kumar10/crawl4ai-mcp"
+"Bug Tracker" = "https://github.com/Kavin-kumar10/crawl4ai-mcp/issues"
 
 [project.scripts]
 crawl4ai-mcp = "Crawl_mcp.main:main"
