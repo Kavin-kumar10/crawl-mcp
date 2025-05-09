@@ -1,139 +1,127 @@
-# server.py
 from mcp.server.fastmcp import FastMCP
 
-# Create an MCP server
 mcp = FastMCP("Crawl4AI")
 
-
-# Add a simple crawling tool
 @mcp.tool()
-async def crawl_simple(url: str) -> str:
-    """
-    Crawl a single URL and return the content in markdown format
-    
-    Args:
-        url: The URL to crawl
-        
-    Returns:
-        Markdown content of the crawled page
-    """
-    from crawl4ai import AsyncWebCrawler
-    
-    try:
-        async with AsyncWebCrawler() as crawler:
-            result = await crawler.arun(url=url)
-            return result.markdown
-    except Exception as e:
-        return f"Error crawling {url}: {str(e)}"
-
-
-# Add a recursive crawling tool
 @mcp.tool()
-async def crawl_recursive(url: str, max_depth: int = 2) -> dict:
+async def crawl_recursive(
+    url: str,
+    max_depth: int = 2,
+    max_pages: int = 500
+) -> dict:
     """
-    Recursively crawl a website starting from a URL
-    
+    Recursively crawl a website starting from a URL.
+
     Args:
-        url: The URL to start crawling from
-        max_depth: Maximum depth for recursive crawling (default: 2)
-        
+        url: The URL to start crawling from.
+        max_depth: Maximum depth for recursive crawling (default: 2).
+        max_pages: Maximum number of pages to crawl (default: 500).
+
     Returns:
-        Dictionary with crawled data
+        Dictionary with crawled data.
     """
-    import os
-    import json
-    from urllib.parse import urljoin
     import re
-    from crawl4ai import AsyncWebCrawler
-    
-    # Helper function to extract URLs from markdown content
+    import io
+    import hashlib
+    from contextlib import redirect_stdout
+    from urllib.parse import urljoin, urlparse
+
+    from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode
+
     def extract_urls_from_markdown(markdown_text, base_url):
-        link_pattern = r'\[(.*?)\]\((.*?)\)'
-        links = re.findall(link_pattern, markdown_text)
-        
-        extracted_urls = []
-        
+        if not markdown_text or isinstance(markdown_text, dict):
+            return []
         # Ensure base_url ends with a slash for proper matching
         if not base_url.endswith('/'):
             base_url = base_url + '/'
-        
-        for _, url in links:
-            # Convert relative URLs to absolute
-            absolute_url = urljoin(base_url, url)
-            
-            # Check if the URL starts with the exact base URL
+        link_pattern = r'\[(.*?)\]\((.*?)\)'
+        links = re.findall(link_pattern, markdown_text)
+        extracted_urls = []
+        for _, link_url in links:
+            absolute_url = urljoin(base_url, link_url)
             if absolute_url.startswith(base_url) and absolute_url != base_url:
                 extracted_urls.append(absolute_url)
-        
         return extracted_urls
-    
-    # Recursive crawling function
-    async def recursive_crawl(current_url, crawler, crawled_urls, base_url, current_depth=0):
-        if current_depth > max_depth or current_url in crawled_urls:
-            return []
-        
-        crawled_urls.add(current_url)
-        results = []
-        
-        try:
-            result = await crawler.arun(url=current_url)
-            
-            # Create a structured entry for this URL
-            page_data = {
-                "url": current_url,
-                "title": result.title if hasattr(result, 'title') else "",
-                "content": result.markdown,
-                "depth": current_depth
-            }
-            
-            results.append(page_data)
-            
-            # Extract URLs from the content for further crawling
-            if current_depth < max_depth:
-                extracted_urls = extract_urls_from_markdown(result.markdown, base_url)
-                
-                for next_url in extracted_urls:
-                    if next_url not in crawled_urls:
-                        # Recursively crawl the extracted URLs
-                        sub_results = await recursive_crawl(
-                            next_url, crawler, crawled_urls, base_url, current_depth + 1
-                        )
-                        results.extend(sub_results)
-            
-        except Exception as e:
-            results.append({
-                "url": current_url,
-                "error": str(e),
-                "depth": current_depth
-            })
-        
-        return results
-    
-    # Main crawling logic
+
+    def get_content_hash(content: str) -> str:
+        if not content:
+            return "empty"
+        return hashlib.md5(content.encode('utf-8')).hexdigest()
+
     try:
-        base_url = url
-        
-        # Remove trailing slash for consistency
-        if base_url.endswith('/'):
-            base_url = base_url[:-1]
-        
+        parsed_url = urlparse(url)
+        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+        if not base_url.endswith('/'):
+            base_url += '/'
+
         crawled_urls = set()
-        crawled_data = []
-        
-        async with AsyncWebCrawler() as crawler:
-            results = await recursive_crawl(url, crawler, crawled_urls, base_url)
-            crawled_data.extend(results)
-        
+        content_hashes = set()
+        results = []
+        page_count = 0
+        main_content = ""
+
+        async def recursive_crawl(current_url, crawler, current_depth=0):
+            nonlocal page_count, main_content
+
+            if current_depth > max_depth or current_url in crawled_urls or page_count >= max_pages:
+                return
+
+            crawled_urls.add(current_url)
+            page_count += 1
+
+            try:
+                config = CrawlerRunConfig(
+                    cache_mode=CacheMode.BYPASS,
+                    verbose=False,
+                )
+                f_inner = io.StringIO()
+                with redirect_stdout(f_inner):
+                    result = await crawler.arun(url=current_url, config=config)
+                markdown_content = ""
+                if hasattr(result, "markdown") and hasattr(result.markdown, "raw_markdown"):
+                    markdown_content = result.markdown.raw_markdown or ""
+                # Duplicate content check
+                content_hash = get_content_hash(markdown_content)
+                if content_hash in content_hashes and content_hash != "empty":
+                    return  # Skip duplicate content
+                content_hashes.add(content_hash)
+                if current_url == url and not main_content:
+                    main_content = markdown_content
+                results.append({
+                    "url": current_url,
+                    "depth": current_depth,
+                    "title": getattr(result, "title", "") or result.metadata.get("title", ""),
+                    "markdown": markdown_content
+                })
+
+                if current_depth < max_depth and page_count < max_pages:
+                    extracted_urls = extract_urls_from_markdown(markdown_content, base_url)
+                    for next_url in extracted_urls:
+                        if next_url not in crawled_urls and page_count < max_pages:
+                            await recursive_crawl(next_url, crawler, current_depth + 1)
+            except Exception as e:
+                results.append({
+                    "url": current_url,
+                    "depth": current_depth,
+                    "error": str(e)
+                })
+
+        f = io.StringIO()
+        with redirect_stdout(f):
+            async with AsyncWebCrawler() as crawler:
+                await recursive_crawl(url, crawler)
+
         return {
             "status": "success",
             "crawled_urls_count": len(crawled_urls),
-            "data": crawled_data
+            "main_content": main_content,
+            "data": results
         }
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
         return {
             "status": "error",
-            "message": str(e)
+            "message": str(e),
+            "details": error_details
         }
-
-if __name__ == "__main__":
-    mcp.run(transport="stdio")

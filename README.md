@@ -1,3 +1,4 @@
+
 # Crawl4AI MCP Server
 
 A web crawler MCP server using crawl4ai that allows AI models to crawl websites and extract content in markdown format.
@@ -11,9 +12,25 @@ A web crawler MCP server using crawl4ai that allows AI models to crawl websites 
 
 ## Installation
 
-### Using pipx (Recommended)
+### Using uv (Recommended)
 
-The easiest way to install and use the Crawl4AI MCP server is with pipx:
+The fastest way to install and use the Crawl4AI MCP server is with uv:
+
+```bash
+# Install directly from GitHub
+uv pip install git+https://github.com/yourusername/crawl4ai-mcp.git
+
+# Or create a virtual environment first
+uv venv -p python3.10 .venv
+source .venv/bin/activate  # On Unix/macOS
+# or
+.venv\Scripts\activate  # On Windows
+uv pip install git+https://github.com/yourusername/crawl4ai-mcp.git
+```
+
+### Using pipx
+
+You can also install it with pipx for an isolated environment:
 
 ```bash
 pipx install git+https://github.com/yourusername/crawl4ai-mcp.git
@@ -36,6 +53,11 @@ To install from source:
 ```bash
 git clone https://github.com/yourusername/crawl4ai-mcp.git
 cd crawl4ai-mcp
+
+# Using uv (recommended)
+uv pip install -e .
+
+# Or using pip
 pip install -e .
 ```
 
@@ -43,15 +65,31 @@ pip install -e .
 
 ### Running the Server
 
-Once installed, you can use the MCP server with any MCP-compatible client:
+Once installed, you can run the MCP server directly:
 
 ```bash
-# Using pipx installation
-mcp connect crawl4ai-mcp
+# If installed with pipx
+pipx run crawl4ai-mcp
 
-# Or directly with the MCP CLI
-mcp connect "pipx run crawl4ai-mcp"
+# If installed with pip or uv
+python -m Crawl_mcp.main
 ```
+
+The server uses stdio transport (not URL-based) for communication with MCP clients.
+
+### Using the mcp.json Configuration
+
+This repository includes an `mcp.json` file that you can use to configure the MCP server in MCP-compatible clients:
+
+```bash
+# Copy it to your home directory or project directory
+cp mcp.json ~/.mcp.json
+```
+
+The `mcp.json` file contains:
+- Server configuration with stdio transport
+- Tool definitions with parameters and return types
+- Descriptions for tools and parameters
 
 ### Available Tools
 
@@ -89,10 +127,10 @@ Recursively crawl a website starting from a URL.
 
 ### Example Usage with Claude
 
-Here's an example of how to use the MCP server with Claude:
+Here's an example of how to use the MCP server with Claude after configuring it in your MCP environment:
 
 ```
-I need to connect to the Crawl4AI MCP server to crawl a website.
+I need to use the Crawl4AI MCP server to crawl a website.
 
 First, let me crawl a single page:
 <use_mcp_tool>
@@ -118,21 +156,62 @@ Now, let me recursively crawl the website:
 </use_mcp_tool>
 ```
 
+Note: The MCP server uses stdio transport for communication, not HTTP/URL-based transport. This means it runs in the terminal and communicates through standard input/output streams.
+
 ## Development
 
 ### Requirements
 
-- Python 3.8 or higher
-- MCP CLI (`pip install mcp[cli]`)
+- Python 3.10 or higher
+- MCP CLI 1.7.1 or higher (`pip install mcp[cli]>=1.7.1`)
 - crawl4ai (`pip install crawl4ai`)
+
+### Development Setup
+
+Set up your development environment:
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/crawl4ai-mcp.git
+cd crawl4ai-mcp
+
+# Create a virtual environment with uv
+uv venv -p python3.10 .venv
+source .venv/bin/activate  # On Unix/macOS
+# or
+.venv\Scripts\activate  # On Windows
+
+# Install in development mode
+uv pip install -e .
+
+# Install development dependencies (if you have any)
+uv pip install -e ".[dev]"
+```
 
 ### Testing
 
 To test the MCP server locally:
 
 ```bash
-# Run the server in development mode
+# Run the server in development mode with the MCP Inspector
 mcp dev Crawl_mcp/server.py
+
+# Or run the module directly (stdio mode)
+python -m Crawl_mcp.main
+```
+
+When running in stdio mode, the server expects JSON-RPC messages on stdin and writes responses to stdout. This is how MCP clients communicate with the server.
+
+### Dependency Management
+
+Use uv to manage dependencies:
+
+```bash
+# Check for dependency conflicts
+uv pip check
+
+# Generate a lock file (if you have a requirements.in file)
+uv pip compile requirements.in -o requirements.txt
 ```
 
 ## License
