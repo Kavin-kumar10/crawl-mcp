@@ -41,6 +41,24 @@ async def crawl_recursive(
             if absolute_url.startswith(base_url) and absolute_url != base_url:
                 extracted_urls.append(absolute_url)
         return extracted_urls
+    
+    def remove_links_from_markdown(markdown_text):
+        """
+        Remove markdown links from text while preserving the link text.
+        For example, [Link Text](https://example.com) becomes Link Text.
+        
+        Args:
+            markdown_text: The markdown text to process.
+            
+        Returns:
+            Markdown text with links removed but link text preserved.
+        """
+        if not markdown_text or isinstance(markdown_text, dict):
+            return markdown_text
+        
+        # Replace markdown links with just the link text
+        link_pattern = r'\[(.*?)\]\((.*?)\)'
+        return re.sub(link_pattern, r'\1', markdown_text)
 
     def get_content_hash(content: str) -> str:
         if not content:
@@ -85,12 +103,15 @@ async def crawl_recursive(
                     return  # Skip duplicate content
                 content_hashes.add(content_hash)
                 if current_url == url and not main_content:
-                    main_content = markdown_content
+                    main_content = remove_links_from_markdown(markdown_content)
+                
+                # Remove links from markdown content before adding to results
+                clean_markdown = remove_links_from_markdown(markdown_content)
                 results.append({
                     "url": current_url,
                     "depth": current_depth,
                     "title": getattr(result, "title", "") or result.metadata.get("title", ""),
-                    "markdown": markdown_content
+                    "markdown": clean_markdown
                 })
 
                 if current_depth < max_depth and page_count < max_pages:
